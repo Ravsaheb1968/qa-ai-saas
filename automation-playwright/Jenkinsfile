@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'NodeJS-18'
+    }
+
+    parameters {
+        string(name: 'REPO_URL', defaultValue: '', description: 'Git repository URL')
+        string(name: 'BASE_URL', defaultValue: 'https://parabank.parasoft.com/parabank/index.htm', description: 'Application URL')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: "${params.REPO_URL}"
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+                sh 'npx playwright install --with-deps'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npx playwright test --reporter=html'
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'playwright-report/**'
+        }
+    }
+}
